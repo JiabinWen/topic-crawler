@@ -1,0 +1,44 @@
+name: Render Fiber Bundle PR
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg texlive-latex-base texlive-latex-extra texlive-fonts-recommended dvisvgm fonts-noto-cjk libcairo2-dev libpango1.0-dev pkg-config
+          python -m pip install --upgrade pip
+          python -m pip install "manim==0.20.1"
+          base64 -d fiber_bundle_explainer.py.gz.b64 | gzip -d > fiber_bundle_explainer.py
+          python -m py_compile fiber_bundle_explainer.py
+      - name: Render
+        run: |
+          manim -qh --fps 30 --disable_caching fiber_bundle_explainer.py FiberBundleExplainer
+          video="$(find media/videos -type f -name 'FiberBundleExplainer.mp4' | head -n 1)"
+          test -n "$video"
+          cp "$video" fiber_bundle_explainer_final.mp4
+          ffprobe -v error -show_entries format=duration,size -show_entries stream=codec_name,width,height,r_frame_rate -of default=noprint_wrappers=1 fiber_bundle_explainer_final.mp4
+          sha256sum fiber_bundle_explainer_final.mp4 > fiber_bundle_explainer_final.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fiber-bundle-manim-mp4
+          path: |
+            fiber_bundle_explainer_final.mp4
+            fiber_bundle_explainer_final.sha256
+            fiber_bundle_explainer.py
+          if-no-files-found: error
+          retention-days: 1
