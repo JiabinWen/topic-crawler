@@ -1,0 +1,76 @@
+name: Render Fiber Bundle Manim
+
+on:
+  push:
+    paths:
+      - .github/workflows/render-fiber-bundle.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            ffmpeg \
+            texlive-latex-base \
+            texlive-latex-extra \
+            texlive-fonts-recommended \
+            dvisvgm \
+            fonts-noto-cjk \
+            libcairo2-dev \
+            libpango1.0-dev \
+            pkg-config
+
+      - name: Install Manim
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "manim==0.20.1"
+          manim --version
+
+      - name: Restore animation source
+        shell: bash
+        run: |
+          cat > /tmp/fiber_bundle_explainer.py.gz.b64 <<'EOF'
+          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
+          EOF
+          base64 -d /tmp/fiber_bundle_explainer.py.gz.b64 | gzip -d > fiber_bundle_explainer.py
+          python -m py_compile fiber_bundle_explainer.py
+
+      - name: Render 1080p MP4
+        run: |
+          manim -qh --fps 30 --disable_caching fiber_bundle_explainer.py FiberBundleExplainer
+
+      - name: Collect output
+        shell: bash
+        run: |
+          video="$(find media/videos -type f -name 'FiberBundleExplainer.mp4' | head -n 1)"
+          test -n "$video"
+          cp "$video" fiber_bundle_explainer_final.mp4
+          ffprobe -v error -show_entries format=duration,size -show_entries stream=codec_name,width,height,r_frame_rate -of default=noprint_wrappers=1 fiber_bundle_explainer_final.mp4
+          sha256sum fiber_bundle_explainer_final.mp4 > fiber_bundle_explainer_final.sha256
+
+      - name: Upload MP4
+        uses: actions/upload-artifact@v4
+        with:
+          name: fiber-bundle-manim-mp4
+          path: |
+            fiber_bundle_explainer_final.mp4
+            fiber_bundle_explainer_final.sha256
+            fiber_bundle_explainer.py
+          if-no-files-found: error
+          retention-days: 1
