@@ -1,0 +1,1 @@
+Trigger the isolated Manim render for the fiber-bundle explainer.
